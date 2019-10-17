@@ -51,37 +51,37 @@
 */
 
 /* BLAS level-1 vector copy */
-void dcopy(int*, double*, int*, double*, int*);
+void dcopy_(int*, double*, int*, double*, int*);
 
 /* BLAS level-1 scalar-vector multiplication */
-void dscal(int*, double*, double*, int*);
+void dscal_(int*, double*, double*, int*);
 
 /* BLAS level-1 vector-vector inner product */
-double ddot(int*, double*, int*, double*, int*);
+double ddot_(int*, double*, int*, double*, int*);
 
 /* BLAS level-2 vector-vector outer product */
-void dger(int*, int*, double*, double*, int*, double*, int*, double*, int*);
+void dger_(int*, int*, double*, double*, int*, double*, int*, double*, int*);
 
 /* BLAS level-2 matrix-vector multiplication */
-double dgemv(char*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
+double dgemv_(char*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
 
 /* BLAS level-3 half-symmetric matrix-matrix multiplication */
-void dsymm(char*, char*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
+void dsymm_(char*, char*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
 
 /* BLAS level-3 triangular matrix inversion */
-void dtrsm(char*, char*, char*, char*, int*, int*, double*, double*, int*, double*, int*);
+void dtrsm_(char*, char*, char*, char*, int*, int*, double*, double*, int*, double*, int*);
 
 /* BLAS level-3 symmetry-preserving matrix self-multiplication */
-void dsyrk(char*, char*, int*, int*, double*, double*, int*, double*, double*, int*);
+void dsyrk_(char*, char*, int*, int*, double*, double*, int*, double*, double*, int*);
 
 /* BLAS level-3 symmetry-preserving matrix-matrix multiplication */
-void dsyr2k(char*, char*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
+void dsyr2k_(char*, char*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
 
 /* BLAS level-3 matrix-matrix multiplication */
-void dgemm(char*, char*, int*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
+void dgemm_(char*, char*, int*, int*, int*, double*, double*, int*, double*, int*, double*, double*, int*);
 
 /* LAPACK symmetric eigensolver */
-void dsyev(char*, char*, int*, double*, int*, double*, double*, int*, int*);
+void dsyev_(char*, char*, int*, double*, int*, double*, double*, int*, int*);
 
 /* 1-sided (left side) application of a block Householder transformation: (I - W*Y^T)*M */
 /* NOTE: this is similar to Algorithm 5 in the ELPA thesis */
@@ -93,9 +93,9 @@ void householder_1sided(int nrow, int ncol, int stride, double *M, double *W, do
   double zero = 0.0, one = 1.0, minus_one = -1.0;
 
   /* A = M^T*Y */
-  dgemm(&trans, &notrans, &stride, &ncol, &nrow, &one, M, &stride, Y, &stride, &zero, A, &stride);
+  dgemm_(&trans, &notrans, &stride, &ncol, &nrow, &one, M, &stride, Y, &stride, &zero, A, &stride);
   /* M = M - W*A^T */
-  dgemm(&notrans, &trans, &nrow, &stride, &ncol, &minus_one, W, &stride, A, &stride, &one, M, &stride);
+  dgemm_(&notrans, &trans, &nrow, &stride, &ncol, &minus_one, W, &stride, A, &stride, &one, M, &stride);
 }
 
 /* 2-sided application of a block Householder transformation: (I - W*Y^T)*M*(I - Y*W^T) */
@@ -108,13 +108,13 @@ void householder_2sided(int nrow, int ncol, int stride, double *M, double *W, do
   double zero = 0.0, one = 1.0, minus_one = -1.0, minus_half = -0.5;
 
   /* Z = M*Y */
-  dsymm(&left, &lo, &nrow, &ncol, &one, M, &stride, Y, &stride, &zero, Z, &stride);
+  dsymm_(&left, &lo, &nrow, &ncol, &one, M, &stride, Y, &stride, &zero, Z, &stride);
   /* A = Y^T*Z */
-  dgemm(&trans, &notrans, &ncol, &ncol, &nrow, &one, Y, &stride, Z, &stride, &zero, A, &stride);
+  dgemm_(&trans, &notrans, &ncol, &ncol, &nrow, &one, Y, &stride, Z, &stride, &zero, A, &stride);
   /* Z = Z - 0.5*W*A */
-  dgemm(&notrans, &notrans, &nrow, &ncol, &ncol, &minus_half, W, &stride, A, &stride, &one, Z, &stride);
+  dgemm_(&notrans, &notrans, &nrow, &ncol, &ncol, &minus_half, W, &stride, A, &stride, &one, Z, &stride);
   /* M = M - W*Z^T - Z*W^T */
-  dsyr2k(&lo, &notrans, &nrow, &ncol, &minus_one, W, &stride, Z, &stride, &one, M, &stride);
+  dsyr2k_(&lo, &notrans, &nrow, &ncol, &minus_one, W, &stride, Z, &stride, &one, M, &stride);
 }
 
 /* Householder QR decomposition of a matrix stored as a block Householder transformation, Q = I - W*Y^T */
@@ -133,35 +133,35 @@ void qr_householder(int nrow, int ncol, int stride, double *M, double *W, double
     double wt, *M2 = OFFSET(M, INDEX(i,i,stride)), *Y2 = OFFSET(Y, INDEX(i,i,stride));
 
     /* calculate matrix element of reduced column */
-    wt = sqrt(ddot(&nrow2, M2, &unit, M2, &unit));
+    wt = sqrt(ddot_(&nrow2, M2, &unit, M2, &unit));
     if(M2[0] > 0.0) { wt = -wt; }
     /* construct Householder vector in leading column of Y2 */
-    dcopy(&nrow2, M2, &unit, Y2, &unit);
+    dcopy_(&nrow2, M2, &unit, Y2, &unit);
     Y2[0] -= wt;
     wt = 1.0/sqrt(2.0*wt*(wt - M2[0]));
-    dscal(&nrow2, &wt, Y2, &unit);
+    dscal_(&nrow2, &wt, Y2, &unit);
     /* T = M2^T*Y2 (leading columns of T & Y2 only) */
-    dgemv(&trans, &nrow2, &ncol2, &one, M2, &stride, Y2, &unit, &zero, T, &unit);
+    dgemv_(&trans, &nrow2, &ncol2, &one, M2, &stride, Y2, &unit, &zero, T, &unit);
     /* M2 = M2 - 2.0*Y2*T^T (leading columns of T & Y2 only) */
-    dger(&nrow2, &ncol2, &minus_two, Y2, &unit, T, &unit, M2, &stride);
+    dger_(&nrow2, &ncol2, &minus_two, Y2, &unit, T, &unit, M2, &stride);
     /* set unassigned matrix elements of Y to zero */
     for(j=0 ; j<i ; j++) { Y[INDEX(j,i,stride)] = 0.0; }
     /* clean the matrix elements formally removed from M */
     nrow2--;
-    dscal(&nrow2, &zero, OFFSET(M2,1), &unit);
+    dscal_(&nrow2, &zero, OFFSET(M2,1), &unit);
   }
 
   /* W = Y^T*Y (upper triangle only) */
-  dsyrk(&up, &trans, &rank, &nrow, &one, Y, &stride, &zero, W, &stride);
+  dsyrk_(&up, &trans, &rank, &nrow, &one, Y, &stride, &zero, W, &stride);
   /* W *= 0.5 (diagonals only) */
   i = stride+1;
-  dscal(&rank, &half, W, &i);
+  dscal_(&rank, &half, W, &i);
   /* T = W^{-1} */
   for(i=0 ; i<ncol ; i++) for(j=0 ; j<ncol ; j++) { T[INDEX(j,i,stride)] = 0.0; }
   for(i=0 ; i<ncol ; i++) { T[INDEX(i,i,stride)] = 1.0; }
-  dtrsm(&left, &up, &notrans, &nounit, &rank, &rank, &one, W, &stride, T, &stride);
+  dtrsm_(&left, &up, &notrans, &nounit, &rank, &rank, &one, W, &stride, T, &stride);
   /* W = Y*T */
-  dgemm(&notrans, &notrans, &nrow, &rank, &rank, &one, Y, &stride, T, &stride, &zero, W, &stride);
+  dgemm_(&notrans, &notrans, &nrow, &rank, &rank, &one, Y, &stride, T, &stride, &zero, W, &stride);
 }
 
 /* Cholesky QR decomposition of a matrix stored as a block Householder transformation, Q = I - W*Y^T */
@@ -197,7 +197,7 @@ int main(int argc, char** argv)
   if(mode < 0 || mode > 1) { printf("ERROR: unknown mode (%d)\n", mode); exit(1); }
 
   /* workspace query */
-  dsyev(&jobv, &lo, &ndim, mat1, &ndim, eval1, &kappa, &lwork, &info);
+  dsyev_(&jobv, &lo, &ndim, mat1, &ndim, eval1, &kappa, &lwork, &info);
   lwork = MAX((int)kappa, nblock*ndim);
 
   /* allocate memory */
@@ -237,8 +237,8 @@ int main(int argc, char** argv)
   }
 
   /* diagonalize the original & transformed matrices */
-  dsyev(&jobv, &lo, &ndim, mat1, &ndim, eval1, work, &lwork, &info);
-  dsyev(&jobv, &lo, &ndim, mat2, &ndim, eval2, work, &lwork, &info);
+  dsyev_(&jobv, &lo, &ndim, mat1, &ndim, eval1, work, &lwork, &info);
+  dsyev_(&jobv, &lo, &ndim, mat2, &ndim, eval2, work, &lwork, &info);
 
   /* back-transform the eigenvectors of the transformed matrix */
   for(i=ndim - ndim%nblock ; i>=nblock ; i-=nblock)
@@ -262,8 +262,8 @@ int main(int argc, char** argv)
     error = fabs(eval1[i] - eval2[i]);
     if(error > norm*EPS) { printf("WARNING: large eigenvalue error (%d,%e > %e)\n", i, error, norm*EPS); }
 
-    error = 1.0 - fabs(ddot(&ndim,vec1,&unit,vec2,&unit)) /
-                  sqrt(ddot(&ndim,vec1,&unit,vec1,&unit) * ddot(&ndim,vec2,&unit,vec2,&unit));
+    error = 1.0 - fabs(ddot_(&ndim,vec1,&unit,vec2,&unit)) /
+                  sqrt(ddot_(&ndim,vec1,&unit,vec1,&unit) * ddot_(&ndim,vec2,&unit,vec2,&unit));
     kappa = 1.0;
     if(i>0) { kappa = MAX(kappa, norm/(eval1[i] - eval1[i-1])); }
     if(i<ndim-1) { kappa = MAX(kappa, norm/(eval1[i+1] - eval1[i])); }
